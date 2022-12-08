@@ -3,7 +3,7 @@ use std::fs;
 
 fn check_marker(data_buff: &str, distinct: usize) -> usize {
     let mut index: usize = 0;
-    for i in 0..data_buff.len() - (distinct - 1) {
+    for i in 0..data_buff.chars().count() - distinct {
         let mut m: HashMap<char, i32> = HashMap::new();
         let mut found: bool = true;
         let slice = &data_buff[i..i + distinct];
