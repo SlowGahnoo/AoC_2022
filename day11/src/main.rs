@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
+use std::str::FromStr;
 use std::{fmt, fs, vec};
 
 #[derive(Debug)]
@@ -96,11 +97,13 @@ struct Monkey {
     inspections: usize,
 }
 
-impl Monkey {
-    fn parse_operation(op_node: &Node) -> Operation {
-        let expression = op_node.line.split("=").last().unwrap();
+impl FromStr for Operation {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let expression = s.split("=").last().unwrap();
         let tokens = expression.split_whitespace().collect::<Vec<&str>>();
-        let operation = match tokens[1] {
+        match tokens[1] {
             "*" => {
                 let op1 = tokens[0];
                 let op2 = tokens[2];
@@ -112,7 +115,7 @@ impl Monkey {
                     "old" => Value::Old,
                     num => Value::Num(num.parse().unwrap()),
                 };
-                Operation::Mul((oop1, oop2))
+                Ok(Operation::Mul((oop1, oop2)))
             }
             "+" => {
                 let op1 = tokens[0];
@@ -125,13 +128,14 @@ impl Monkey {
                     "old" => Value::Old,
                     num => Value::Num(num.parse().unwrap()),
                 };
-                Operation::Add((oop1, oop2))
+                Ok(Operation::Add((oop1, oop2)))
             }
-            _ => unreachable!(),
-        };
-        operation
+            _ => Err(()),
+        }
     }
+}
 
+impl Monkey {
     fn parse_test(test_node: &Node) -> Test {
         let div = test_node
             .line
@@ -180,10 +184,8 @@ impl Monkey {
             .map(|n| n.strip_prefix(" ").unwrap().parse::<usize>().unwrap())
             .collect();
 
-        let operation_node = &node.children[1].borrow();
-        let operation = Self::parse_operation(operation_node);
-        let test_node = &node.children[2].borrow();
-        let test = Self::parse_test(test_node);
+        let operation = Operation::from_str(&node.children[1].borrow().line).unwrap();
+        let test = Self::parse_test(&node.children[2].borrow());
 
         Monkey {
             id,
