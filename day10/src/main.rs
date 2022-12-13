@@ -2,7 +2,7 @@ use std::fs;
 use std::str::FromStr;
 
 enum Instruction {
-    Addx,
+    Addx(i32),
     Noop,
 }
 
@@ -10,8 +10,9 @@ impl FromStr for Instruction {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "addx" => Ok(Instruction::Addx),
+        let ins: Vec<&str> = s.split_whitespace().collect();
+        match ins[0] {
+            "addx" => Ok(Instruction::Addx(ins[1].parse().unwrap())),
             "noop" => Ok(Instruction::Noop),
             _ => Err(()),
         }
@@ -22,7 +23,6 @@ struct CPU {
     reg_x: i32,
     cycle: i32,
     instruction: Instruction,
-    iargs: Vec<i32>,
     done: bool,
 }
 
@@ -32,18 +32,15 @@ impl CPU {
             reg_x: 1,
             cycle: 0,
             instruction: Instruction::Noop,
-            iargs: vec![],
             done: false,
         }
     }
 
     fn fetch(&mut self, instruction: &str) {
-        let ins: Vec<&str> = instruction.split_whitespace().collect();
-        match Instruction::from_str(ins[0]) {
-            Ok(Instruction::Addx) => {
+        match Instruction::from_str(instruction) {
+            Ok(Instruction::Addx(arg)) => {
                 self.done = false;
-                self.instruction = Instruction::Addx;
-                self.iargs.push(ins[1].parse().unwrap());
+                self.instruction = Instruction::Addx(arg);
             }
             Ok(Instruction::Noop) => {
                 self.done = false;
@@ -55,9 +52,9 @@ impl CPU {
 
     fn execute(&mut self) {
         match self.instruction {
-            Instruction::Addx => {
+            Instruction::Addx(arg) => {
                 if self.cycle == 2 {
-                    self.reg_x += self.iargs.pop().unwrap();
+                    self.reg_x += arg;
                     self.done = true;
                     self.cycle = 0;
                 }
